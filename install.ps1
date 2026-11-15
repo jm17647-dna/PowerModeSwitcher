@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     PowerModeSwitcher 一键安装（绿色部署，内置 AutoHotkey v2 运行时）。
 
