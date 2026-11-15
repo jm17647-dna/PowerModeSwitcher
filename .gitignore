@@ -1,0 +1,23 @@
+# AutoHotkey 运行时（GPLv2，自行从官网下载）
+AutoHotkey64.exe
+AutoHotkey32.exe
+*.exe
+
+# 运行时产物
+logs/
+*.log
+
+# 测试中间产物
+dev/shots/
+dev/*.txt
+dev/icons_preview.png
+dev/cfg_before.ini
+dev/cfg_clean_crlf.ini
+
+# 便携包内的纯文本说明（与 README.md 重复，仅随绿色包分发）
+README.txt
+
+# 系统垃圾
+Thumbs.db
+desktop.ini
+.DS_Store
