@@ -14,6 +14,14 @@
 
 **它不做什么**：不碰风扇曲线、不调显卡功耗墙、不改进程优先级、不注入游戏。就是一个电源计划开关。
 
+## 宣传图
+
+小红书用的 9 张竖版宣传图（1080×1440），点开看大图：
+
+[![宣传图预览](marketing/xiaohongshu/preview.png)](marketing/xiaohongshu/)
+
+文案与发布说明见 [`marketing/xiaohongshu/文案.md`](marketing/xiaohongshu/)，渲染脚本是 [`marketing/render_xhs.py`](marketing/render_xhs.py)。
+
 ---
 
 ## 界面
