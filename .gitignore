@@ -1,3 +1,4 @@
+dev/
 # AutoHotkey 运行时（GPLv2，自行从官网下载）
 AutoHotkey64.exe
 AutoHotkey32.exe
@@ -21,3 +22,12 @@ README.txt
 Thumbs.db
 desktop.ini
 .DS_Store
+
+# 本轮迭代的备份与临时截图
+*.bak-*
+*.bak
+*.bak-step*
+*.bak2
+docs/_*.png
+docs/_*.txt
+release/

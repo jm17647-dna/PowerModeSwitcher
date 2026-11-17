@@ -14,13 +14,27 @@
 
 **它不做什么**：不碰风扇曲线、不调显卡功耗墙、不改进程优先级、不注入游戏。就是一个电源计划开关。
 
-## 宣传图
+---
 
-小红书用的 9 张竖版宣传图（1080×1440），点开看大图：
+## 下载即用（推荐）
 
-[![宣传图预览](marketing/xiaohongshu/preview.png)](marketing/xiaohongshu/)
+到 [Releases](https://github.com/jm17647-dna/PowerModeSwitcher/releases) 下载 `PowerModeSwitcher-portable-v1.1.0.zip`，解压到任意目录，双击 `启动.vbs` 即可，**不用装 AutoHotkey**（便携运行时已随包附带）。
 
-文案与发布说明见 [`marketing/xiaohongshu/文案.md`](marketing/xiaohongshu/)，渲染脚本是 [`marketing/render_xhs.py`](marketing/render_xhs.py)。
+解压后目录长这样：
+
+```
+PowerModeSwitcher/
+├── 启动.vbs                  ← 双击这个
+├── start.cmd                 ← 命令行版启动（可看报错）
+├── PowerModeSwitcher.ahk     ← 主程序
+├── config.ini                ← 配置（改热键、时长、图标都在这）
+├── AutoHotkey64.exe          ← 便携运行时（GPLv2）
+├── Lib\UIA.ahk               ← 风扇联动用的 UI 自动化库
+├── icon_sets\G_filled\       ← 三档托盘图标
+└── 第三方组件说明.txt          ← 运行时与图标的许可证来源
+```
+
+启动后托盘出现一个小图标（Win11 默认收进 `^` 溢出区，可拖出来常驻），按 `Alt+Q` 循环切换。
 
 ---
 
@@ -51,11 +65,12 @@
 | 一键循环 | `Alt+Q`（可改）在 日常 → 游戏 → 静音 → 日常 之间轮转 |
 | 托盘左键 | 单击图标即切换，不用键盘 |
 | 状态不说谎 | 每次切换前用 `powercfg /getactivescheme` 回读系统实际状态，不信内部计数器；你在 Windows 设置里手动改过计划，下一次切换依然正确 |
-| OSD 反馈 | 预创建窗口，切换时只改文本和位置；75% 不透明、圆角、白字、900 ms 自动消失、点击穿透、不抢焦点 |
+| OSD 反馈 | 预创建窗口，切换时只改文本和位置；92% 不透明、圆角、同色系卡片、900 ms 自动消失、点击穿透、不抢焦点 |
 | 多显示器 | OSD 出现在鼠标所在显示器的工作区底部居中，按该屏 DPI 缩放字号 |
 | 隐藏计划自救 | Win11 把「高性能/节能」藏起来时，先试原生 GUID；失败则按**对应的原生模板**复制并重命名，把新 GUID 写回配置——绝不用「平衡」复制后改名冒充 |
 | 单实例 | 重复启动只会替换旧实例，不会出现两个托盘图标 |
-| 零依赖 | 只用 `powercfg.exe` 和系统 API，不装驱动、不需要管理员权限、不联网 |
+| 零依赖 | 只用 `powercfg.exe` 和系统 API，不装驱动、不联网 |
+| 风扇联动 | 切电源档时同步切 GIGABYTE Control Center 的风扇模式（需管理员权限，见下） |
 | 可诊断 | `logs/YYYY-MM-DD.log` 记录每次切换、退出码、`powercfg` 原始输出；`--selftest` 一键输出环境自检 |
 
 ---
@@ -132,18 +147,22 @@ TrayIcon=icon_balanced.ico
 ```
 按下 Alt+Q
    │
-   ├─ powercfg /getactivescheme  ── 回读真实状态，定位当前档位
+   ├─ PowerGetActiveScheme (powrprof.dll)  ── 直接读真实状态，约 0.1 ms
    ├─ 计算下一档（跳过已确认不可用的档位）
-   ├─ powercfg /setactive <GUID>
-   │     └─ 失败 → 试原生 GUID
-   │              └─ 失败 → powercfg -duplicatescheme <原生模板>
+   ├─ PowerSetActiveScheme <GUID>
+   │     └─ 失败 → powercfg /setactive <GUID>
+   │              └─ 仍失败 → powercfg -duplicatescheme <原生模板>
    │                       ├─ powercfg -changename <新GUID> "高性能"
    │                       ├─ 写回 config.ini
    │                       └─ 再激活；仍失败则标记该档不可用
-   ├─ powercfg /getactivescheme  ── 再回读一次，校验是否真的切过去了
+   ├─ PowerGetActiveScheme  ── 再回读一次，校验是否真的切过去了
    ├─ 换托盘图标 + 重建菜单
    └─ OSD：改文本 → 量文字尺寸 → 移到目标屏幕底部居中 → 显示 → 900 ms 后隐藏
 ```
+
+读状态和切状态都走 `powrprof.dll` 的接口，只有"复制计划 / 重命名 / 枚举"这类边缘操作才起 `powercfg` 进程。
+
+早期版本全用 `powercfg`，一次切换要 spawn 三个进程，实测中位数 **302 ms**；改成直调 API 后降到 **≈206 ms**。剩下那 0.2 秒是 Windows 自己应用电源策略的耗时（`PowerSetActiveScheme` 调用本身就要 30–210 ms，返回后系统还要 0–280 ms 才真正生效），换任何实现都绕不过去。
 
 几个刻意的设计决定：
 
@@ -156,6 +175,88 @@ TrayIcon=icon_balanced.ico
 **4. OSD 窗口只创建一次。** 启动时建好隐藏窗口，切换时只改文本、量尺寸、移动、显示。每次新建窗口会带来可见的闪烁和 GC 抖动。
 
 **5. `powercfg` 的退出码和输出都要落盘。** 失败不静默：解析不了当前计划、激活失败、复制失败、重命名失败，全都有日志行，含退出码和原始输出片段。
+
+---
+
+## 风扇联动（GIGABYTE Control Center）
+
+切电源档时，顺手把 GCC 的风扇模式也切过去。默认映射：
+
+| PowerModeSwitcher | GCC 风扇模式 | AutomationId |
+| :--- | :--- | :--- |
+| 游戏 · 高性能 | 全速 | `FullSpeedModeToggleButton` |
+| 日常 · 平衡 | 正常 | `PerformanceModeToggleButton` |
+| 静音 · 节能 | 静音 | `QuietModeToggleButton` |
+
+GCC 还有第四档「手动」(`CustomModeToggleButton`)，在 `config.ini` 里写 `FanMode=Custom` 即可用上。
+
+### 为什么必须管理员权限
+
+GCC 是以**提权进程**运行的。Windows 的 UIPI 隔离决定了：普通权限进程的 UIA 连它的控件树都读不到（实测 `GetChildren` 返回 0 个元素）。所以风扇联动有一个硬前提——**本程序也得提权**。
+
+三种启动方式：
+
+| 方式 | 风扇联动 | 代价 |
+| :--- | :--- | :--- |
+| 双击 `start.cmd`（普通权限） | ❌ 跳过并提示 | 无 |
+| 右键 → 以管理员身份运行 | ✅ | 每次弹 UAC |
+| 托盘菜单 →「启用免 UAC 提权启动」 | ✅ 登录自动静默启动 | 一次性 UAC，会创建一个计划任务 |
+
+免 UAC 那条路的做法：注册 `PowerModeSwitcher_Elevated` 计划任务（`/sc onlogon /rl highest`），登录时以最高权限静默拉起，同时删掉 `shell:startup` 里的快捷方式避免双开。取消就在同一菜单项再点一次。
+
+### 不做的事
+
+- **不逆向命名管道**。确实存在 `\\.\pipe\SmartGuardianFanControlCoordinateSystemPort.<guid>`，普通权限也能连上，但协议是私有序列化格式，且发错命令可能让风扇失控。
+- **不碰 `GSA1_ACPIMethod`**。技嘉的 ACPI 方法入口，参数全靠猜，写错同样有硬件风险。
+- **不写 `Fan\setupmode.xml`**。那是 GCC 的输出文件（`Users` 只有读权限），不是输入。
+- **不改风扇曲线数值**，只切模式。
+- **不唤起窗口**。GCC 最小化或没运行时直接跳过，不会为了切个模式把窗口弹出来。
+
+### 降级行为
+
+| 情况 | 行为 |
+| :--- | :--- |
+| 本程序非管理员 | 跳过 + 首次弹一次提示，日志写 `原因=not_admin` |
+| GCC 没运行 | 跳过 + 提示，日志 `原因=gcc_off` |
+| GCC 收进托盘（窗口隐藏） | 跳过 + 提示，日志 `原因=gcc_hidden` |
+| GCC 最小化 | 跳过（不唤起），日志 `原因=gcc_minimized` |
+| GCC 卡死（150ms 无响应） | 跳过，日志 `原因=gcc_hung` |
+| 前台是全屏程序 | 跳过，避免抢焦点打断游戏，日志 `原因=前台全屏程序` |
+| 控制名找不到（GCC 改版） | 只写日志，不弹错，电源切换不受影响 |
+
+### 为什么必须"抢一下焦点"
+
+UIA 提供的三种"程序化点击"对 GCC 的风扇按钮**全都无效**——试过并留有证据：
+
+| 方式 | 结果 |
+| :--- | :--- |
+| `element.ToggleState := 1` | 改了 WPF 依赖属性，`setupmode.xml` 不动 |
+| `element.TogglePattern.Toggle()` | 只改 IsChecked，界面高亮变了，风扇不动 |
+| `InvokePattern.Invoke()` | 报 `Invalid IUnknown interface pointer`（接口本身是坏的） |
+| `LegacyIAccessible.DoDefaultAction()` | 调用成功，但状态无变化 |
+
+**唯一有效**：把 UIA 焦点设到按钮上，再发一个空格——走完整的 `ButtonBase.OnClick` 链路，GCC 才会真正下发 EC 命令。副作用是切换瞬间 GCC 会拿到焦点约 200–400ms，然后立刻还回去。
+
+所以当前台是全屏程序（游戏、全屏播放器）时，本程序会主动跳过风扇切换，不抢焦点。
+
+### 试过但无效的"后台"方案
+
+想做到完全不抢焦点，这四条路都走不通，别再试了：
+
+| 方案 | 结果 |
+| :--- | :--- |
+| `PostMessage` 投递 `WM_LBUTTONDOWN/UP` 到窗口 | 焦点不抢，但 WPF 不认，状态为零变化 |
+| `SetWindowPos(TOPMOST\|NOACTIVATE)` + 真实点击 | 点击生效（`setupmode.xml` 确实被改写），但窗口仍被激活 |
+| 再叠加 `WS_EX_NOACTIVATE` | 焦点不抢了，但点击完全失效——窗口不接收输入事件 |
+| `UIA element.Click()` | 走 `SetCursorPos` + 真实输入，同样需要窗口可激活 |
+
+原因很简单：**Windows 要在后台窗口上产生一次真实点击，这个窗口必须可激活**。这是输入模型决定的，不是实现问题。
+
+---
+
+> **重要**：风扇联动的前提是 GCC 窗口处于「打开但不最小化」状态（可以被其他窗口遮挡）。如果你习惯把 GCC 收进托盘，那它永远不满足条件——这是「不弹窗口」换来的代价。想让它生效，把 GCC 窗口开着丢到后台就行，不需要置顶。
+
+风扇切换走 `SetTimer` 异步执行，不占电源切换和 OSD 的那 200ms。
 
 ---
 
