@@ -176,6 +176,29 @@ def bottom_band(d, label, text, accent=BLUE, y=1128):
     d.text((M, y + 54), text, font=F("cn", 27), fill=TXT)
     return y + 110
 
+
+ICON_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "icon_sets", "G_filled")
+_ICONS = {}
+MODE_KEYS = ["balanced", "performance", "powersave"]
+
+def mode_icon(name, size):
+    key = (name, size)
+    if key in _ICONS:
+        return _ICONS[key]
+    path = os.path.join(ICON_DIR, "icon_%s_g6.ico" % name)
+    im = Image.open(path)
+    im.size = (256, 256)
+    im = im.convert("RGBA").resize((size, size), Image.LANCZOS)
+    _ICONS[key] = im
+    return im
+
+def paste_icon(img, x, y, size, name, glow_color=None):
+    if glow_color:
+        glow(img, lambda ld, c: ld.ellipse([x - size * 0.22, y - size * 0.22,
+                                            x + size * 1.22, y + size * 1.22], fill=c),
+             glow_color, max(12, int(size * 0.34)), 70)
+    img.alpha_composite(mode_icon(name, size), (x, y))
+
 def card_cover(total):
     img, d = canvas()
     corner_marks(d)
@@ -196,13 +219,14 @@ def card_cover(total):
     keycap(d, kx, 726, "Q", w=132, color=PINK)
     d.text((M, 862), "循环三档 · 托盘左键也能切", font=F("cnr", 20), fill=DIM)
     # 三档
-    cy = 966
+    cy = 1014
     trio = [("日常 · 平衡", BLUE, "写文档 / 刷网页"), ("游戏 · 高性能", PINK, "开黑 / 渲染"), ("静音 · 节能", GREEN, "挂机 / 深夜")]
     for i, (name, c, use) in enumerate(trio):
         col_x = M + i * 300
-        d.rectangle([col_x, cy, col_x + 4, cy + 92], fill=c)
-        d.text((col_x + 20, cy + 4), name, font=F("cn", 26), fill=TXT)
-        d.text((col_x + 20, cy + 48), use, font=F("cnr", 18), fill=DIM)
+        paste_icon(img, col_x - 4, cy - 96, 72, MODE_KEYS[i], c)
+        d.rectangle([col_x, cy + 4, col_x + 4, cy + 96], fill=c)
+        d.text((col_x + 22, cy + 6), name, font=F("cn", 26), fill=TXT)
+        d.text((col_x + 22, cy + 52), use, font=F("cnr", 18), fill=DIM)
     # 右下光晕
     glow(img, lambda ld, c: ld.ellipse([W - 380, H - 520, W + 60, H - 60], fill=c), PINK, 80, 60)
     chrome(d, 1, total)
@@ -269,7 +293,8 @@ def card_modes(total):
     ]
     y = 500
     for name, plan, use, c, i in rows:
-        osd_card(img, M, y, CW, name, plan, use, c, i, 3)
+        paste_icon(img, M, y + 21, 76, MODE_KEYS[i - 1], c)
+        osd_card(img, M + 92, y, CW - 92, name, plan, use, c, i, 3)
         y += 152
     d.line([(M, 1030), (W - M, 1030)], fill=LINE, width=1)
     body(d, M, 1058, "切档后 OSD 卡片直接取该档的图标色，颜色即状态，不用读字。", 21, MUT, CW - 40)
@@ -392,7 +417,7 @@ def card_cta(total):
     d.text((M, 622), "PowerModeSwitcher-portable-v1.1.0.zip", font=F("mono", 18), fill=BLUE)
     # 三色条
     for i, c in enumerate([BLUE, PINK, GREEN]):
-        d.rectangle([M + i * 60, 706, M + i * 60 + 48, 712], fill=c)
+        paste_icon(img, M + i * 92, 676, 64, MODE_KEYS[i], c)
     rows = [("适合谁", "台式游戏机 / 笔记本 / 有主板厂商自建计划的机器"),
             ("不适合谁", "想调风扇曲线、超频、改功耗墙的，它不管这些"),
             ("它只做一件事", "把电源计划切过去，并且让你知道切成了")]
