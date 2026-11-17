@@ -7,22 +7,18 @@ AutoHotkey32.exe
 # 运行时产物
 logs/
 *.log
-
 # 测试中间产物
 dev/shots/
 dev/*.txt
 dev/icons_preview.png
 dev/cfg_before.ini
 dev/cfg_clean_crlf.ini
-
 # 便携包内的纯文本说明（与 README.md 重复，仅随绿色包分发）
 README.txt
-
 # 系统垃圾
 Thumbs.db
 desktop.ini
 .DS_Store
-
 # 本轮迭代的备份与临时截图
 *.bak-*
 *.bak
@@ -31,3 +27,5 @@ desktop.ini
 docs/_*.png
 docs/_*.txt
 release/
+# 废弃备份与临时截图
+marketing/xiaohongshu/_*.png
