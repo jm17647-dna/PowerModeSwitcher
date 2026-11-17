@@ -369,7 +369,7 @@ def card_config(total):
     d.text((bx + 18, by + 12), "config.ini", font=F("mono", 17), fill=MUT)
     lines = [
         "[General]", "Hotkey=Alt+Q", "OSD_Duration=900", "OSD_Opacity=235",
-        "StartWithWindows=1", "; 三档图标", "TrayIcon=icon_sets\\G_filled\\icon_balanced_g6.ico",
+        "StartWithWindows=1", "; tray icons", "TrayIcon=icon_sets\\G_filled\\icon_balanced_g6.ico",
     ]
     yy = by + 62
     for i, ln in enumerate(lines):
@@ -377,8 +377,7 @@ def card_config(total):
         d.text((bx + 24, yy), ln, font=F("monor", 18), fill=c)
         yy += 36
     body(d, M, 872, "托盘右键还有：重新读取当前计划、恢复原生 GUID、打开配置 / 日志、开机自启开关。", 20, MUT, CW - 40, 1.5)
-    d.line([(M, 1010), (W - M, 1010)], fill=LINE, width=1)
-    body(d, M, 1038, "高级选项一律不用图形界面：改错了，把 .bak 改回去就行。", 20, DIM, CW - 40)
+    bottom_band(d, "PLAIN TEXT ALL THE WAY", "高级选项一律不用图形界面：改错了，把 .bak 改回去就行。", GREEN)
     chrome(d, 8, total, GREEN)
     return img
 
