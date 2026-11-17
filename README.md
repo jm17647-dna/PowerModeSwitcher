@@ -10,7 +10,7 @@
   <img alt="deps" src="https://img.shields.io/badge/dependencies-0-22C55E">
 </p>
 
-![PowerModeSwitcher 封面](marketing/xiaohongshu/01.png)
+![PowerModeSwitcher 封面](marketing/xiaohongshu/01.png?raw=true)
 
 ---
 
@@ -30,13 +30,13 @@ PowerModeSwitcher 只做一件事：把这五步压成一个键，并且让你�
 
 |  | 档位 | 电源计划 | 颜色 | 什么时候用 |
 | :---: | :--- | :--- | :--- | :--- |
-| <img src="marketing/xiaohongshu/icon-balanced.png" width="40"> | **日常 · 平衡** | 平衡 `381b4222…` | 蓝 `#5393FF` | 写文档、开会、刷网页 —— 不烫、不吵、够快 |
-| <img src="marketing/xiaohongshu/icon-performance.png" width="40"> | **游戏 · 高性能** | 高性能 `8c5e7fda…` | 玫红 `#EC4899` | 开黑、渲染、跑分 —— 全核放开，帧率稳住 |
-| <img src="marketing/xiaohongshu/icon-powersave.png" width="40"> | **静音 · 节能** | 节能 `a1841308…` | 绿 `#22C55E` | 挂机、下载、深夜 —— 风扇安静，电费友好 |
+| <img src="marketing/xiaohongshu/icon-balanced.png?raw=true" width="40"> | **日常 · 平衡** | 平衡 `381b4222…` | 蓝 `#5393FF` | 写文档、开会、刷网页 —— 不烫、不吵、够快 |
+| <img src="marketing/xiaohongshu/icon-performance.png?raw=true" width="40"> | **游戏 · 高性能** | 高性能 `8c5e7fda…` | 玫红 `#EC4899` | 开黑、渲染、跑分 —— 全核放开，帧率稳住 |
+| <img src="marketing/xiaohongshu/icon-powersave.png?raw=true" width="40"> | **静音 · 节能** | 节能 `a1841308…` | 绿 `#22C55E` | 挂机、下载、深夜 —— 风扇安静，电费友好 |
 
 循环方向固定 **日常 → 游戏 → 静音 → 日常**。当前激活的计划不属于这三者时（比如主板厂商自建的方案），按「日常」对待。
 
-![三档 OSD](marketing/xiaohongshu/04.png)
+![三档 OSD](marketing/xiaohongshu/04.png?raw=true)
 
 切档时屏幕底部浮出一张卡片，颜色就是档位颜色；**托盘图标、OSD 卡片、配置里的图标文件**三处用的是同一套图，颜色即状态。
 
@@ -99,7 +99,7 @@ PowerModeSwitcher/
 └── 第三方组件说明.txt          ← 运行时与图标的许可证来源
 ```
 
-![安装三步](marketing/xiaohongshu/07.png)
+![安装三步](marketing/xiaohongshu/07.png?raw=true)
 
 > Win11 默认把新图标收进任务栏右下角的 `^` 里，拖出来就能常驻。
 
@@ -118,7 +118,7 @@ PowerModeSwitcher/
 
 全部选项都在 `config.ini`，改完重启程序即可生效，不用重新编译。
 
-![配置](marketing/xiaohongshu/08.png)
+![配置](marketing/xiaohongshu/08.png?raw=true)
 
 ```ini
 [General]
@@ -190,4 +190,4 @@ AutoHotkey64.exe /validate PowerModeSwitcher.ahk      :: 只做语法校验
 
 宣传物料（9 张，1080×1440）在 `marketing/xiaohongshu/`，由 `marketing/render_xhs_v2.py` 生成：
 
-![宣传物料总览](marketing/xiaohongshu/preview.png)
+![宣传物料总览](marketing/xiaohongshu/preview.png?raw=true)
