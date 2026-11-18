@@ -1,5 +1,5 @@
-#Requires AutoHotkey v2.0
-#SingleInstance Force
+﻿#Requires AutoHotkey v2.0
+#SingleInstance Off
 #include Lib\UIA.ahk
 
 ; ============================================================================
@@ -67,6 +67,8 @@ global FADE_BAR_W           := 0
 global FADE_BAR_H           := 0
 global FADE_WIN_H           := 0
 
+global SI_MUTEX := 0
+
 global GUID_PATTERN := "i)([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"
 
 ; 全局异常兜底：AHK 默认会给未捕获异常弹 MsgBox。开机自启时没人能点它，
@@ -79,6 +81,27 @@ try {
     ExitApp 1
 }
 
+
+; 单实例守卫：已有实例就安静退出（不弹窗）。开机时启动文件夹快捷方式与提权计划
+; 任务可能同时拉起两份，且低权限那份关不掉提权那份 —— 这正是那个弹窗的来源。
+SingleInstanceGuard() {
+    global SI_MUTEX, LOG_DIR, APP_NAME
+    ; 注意：互斥体名只能有一个反斜杠，写 "Local\\..." 会得到 ERROR_INVALID_NAME(123)
+    name := "Local\PowerModeSwitcher_" . A_UserName
+    SI_MUTEX := DllCall("CreateMutexW", "Ptr", 0, "Int", 0, "WStr", name, "Ptr")
+    err := A_LastError
+    if (err = 183) {                                       ; ERROR_ALREADY_EXISTS
+        try {
+            logFile := LOG_DIR . "\" . FormatTime(A_Now, "yyyy-MM-dd") . ".log"
+            FileAppend(FormatTime(A_Now, "yyyy-MM-dd HH:mm:ss") . " 已有实例在运行（" . name . "），本次启动直接退出。`n", logFile, "UTF-8")
+        }
+        if (SI_MUTEX)
+            DllCall("CloseHandle", "Ptr", SI_MUTEX)
+        return true
+    }
+    return false
+}
+
 ; ---------------------------------------------------------------------------
 ; 1. 主流程
 ; ---------------------------------------------------------------------------
@@ -87,6 +110,10 @@ Main() {
 
     if !DirExist(LOG_DIR)
         DirCreate(LOG_DIR)
+
+    ; 单实例：用命名互斥体自己判断，绝不做“关闭上一个实例”这种会被 UAC 拦下的动作
+    if SingleInstanceGuard()
+        ExitApp()
 
     LoadConfig()
     InitOverlay()                   ; 只读记录启动时的电源滑块值（不改电源状态）
@@ -908,7 +935,9 @@ BuildTrayMenu() {
     t.Add("恢复原生电源计划 GUID", RestoreNativeGuids)
     t.Add("打开配置文件", (*) => OpenPath(CONFIG_PATH))
     t.Add("打开日志目录", (*) => OpenPath(LOG_DIR))
-    autoLabel := "开机自启：" . (FileExist(StartupLink()) ? "已启用" : "未启用")
+    autoLabel := ElevatedTaskExistsCached()
+        ? "开机自启：已启用（提权任务）"
+        : ("开机自启：" . (FileExist(StartupLink()) ? "已启用" : "未启用"))
     t.Add(autoLabel, ToggleStartup)
 
     if (CFG.FanModeSync && !A_IsAdmin) {
@@ -957,6 +986,10 @@ RestoreNativeGuids(*) {
 
 ToggleStartup(*) {
     link := StartupLink()
+    if ElevatedTaskExistsCached() {
+        Notify("开机自启现在由「免 UAC 提权启动」的计划任务负责；先取消它，才能切回普通快捷方式方式。", true)
+        return
+    }
     if FileExist(link) {
         try FileDelete link
         Notify("已取消开机自启。")
@@ -968,6 +1001,15 @@ ToggleStartup(*) {
 
 EnsureStartupShortcut(force := false) {
     link := StartupLink()
+    ; 提权计划任务已经是 onlogon 触发的自启，再放一个启动文件夹快捷方式
+    ; 就会在开机时同时拉起两份（低权限那份还会撞上那个“关不掉上个实例”的弹窗）。
+    if ElevatedTaskExists() {
+        if FileExist(link) {
+            try FileDelete link
+            Log("检测到提权自启任务，已移除重复的启动文件夹快捷方式")
+        }
+        return
+    }
     if (!force && FileExist(link))
         return
     target := A_IsCompiled ? A_ScriptFullPath : A_AhkPath
